@@ -6,15 +6,16 @@ import type { CustomJwtPayload, ROLES } from "../types";
 const auth = (...requiredRoles: ROLES[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
+      const authHeader = req.headers.authorization;
 
-      if (!token) {
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({
             success: false,
             message: "You are not authorized!",
         });
       }
 
+      const token = authHeader.split(' ')[1] as string;
       const decoded = jwt.verify(token, config.secret as string) as CustomJwtPayload;
       
       const role = decoded.role;
