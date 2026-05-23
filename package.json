@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "tsx watch ./src/server.ts",
-    "build":"tsup",
+    "build": "tsup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -30,6 +30,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.20.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0"
   }
 }

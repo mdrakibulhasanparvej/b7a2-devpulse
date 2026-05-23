@@ -1,7 +1,5 @@
 
-
    import { createRequire } from 'module';
-
    const require = createRequire(import.meta.url);
 
   
@@ -115,11 +113,11 @@ var signupUser = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Registration failed";
     sendResponse_default(res, {
       statusCode: 400,
       success: false,
-      message: error.message || "Registration failed",
-      error
+      message
     });
   }
 };
@@ -173,12 +171,11 @@ var loginUser = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Login failed";
     sendResponse_default(res, {
       statusCode: 401,
-      // Authentication failure e 401 bhalo
       success: false,
-      message: error.message || "Login failed",
-      error
+      message
     });
   }
 };
@@ -192,6 +189,14 @@ var authRoutes = router2;
 import { Router as Router3 } from "express";
 
 // src/modules/issue/issue.service.ts
+var attachReporter = (issue, users) => {
+  const reporter = users.find((u) => u.id === issue.reporter_id);
+  const { reporter_id, ...issueData } = issue;
+  return {
+    ...issueData,
+    reporter: reporter || null
+  };
+};
 var createIssueIntoDB = async (payload, reporterId) => {
   const { title, description, type } = payload;
   const query = `
@@ -201,7 +206,11 @@ var createIssueIntoDB = async (payload, reporterId) => {
   `;
   const values = [title, description, type, reporterId];
   const result = await pool.query(query, values);
-  return result.rows[0];
+  const issue = result.rows[0];
+  const userQuery = `SELECT id, name, role FROM users WHERE id = $1`;
+  const userResult = await pool.query(userQuery, [issue.reporter_id]);
+  const users = userResult.rows;
+  return attachReporter(issue, users);
 };
 var getAllIssuesFromDB = async (filters) => {
   const { sort, type, status } = filters;
@@ -224,15 +233,7 @@ var getAllIssuesFromDB = async (filters) => {
   const userQuery = `SELECT id, name, role FROM users WHERE id = ANY($1)`;
   const userResult = await pool.query(userQuery, [reporterIds]);
   const users = userResult.rows;
-  const formattedIssues = issues.map((issue) => {
-    const reporter = users.find((u) => u.id === issue.reporter_id);
-    const { reporter_id, ...issueData } = issue;
-    return {
-      ...issueData,
-      reporter: reporter || null
-    };
-  });
-  return formattedIssues;
+  return issues.map((issue) => attachReporter(issue, users));
 };
 var getSingleIssueFromDB = async (id) => {
   const issueQuery = `SELECT * FROM issues WHERE id = $1`;
@@ -243,12 +244,8 @@ var getSingleIssueFromDB = async (id) => {
   }
   const userQuery = `SELECT id, name, role FROM users WHERE id = $1`;
   const userResult = await pool.query(userQuery, [issue.reporter_id]);
-  const reporter = userResult.rows[0];
-  const { reporter_id, ...issueData } = issue;
-  return {
-    ...issueData,
-    reporter: reporter || null
-  };
+  const users = userResult.rows;
+  return attachReporter(issue, users);
 };
 var updateIssueInDB = async (issueId, userId, userRole, payload) => {
   const findQuery = `SELECT * FROM issues WHERE id = $1`;
@@ -277,7 +274,11 @@ var updateIssueInDB = async (issueId, userId, userRole, payload) => {
   `;
   const values = [title, description, type, issueId];
   const result = await pool.query(updateQuery, values);
-  return result.rows[0];
+  const updatedIssue = result.rows[0];
+  const userQuery = `SELECT id, name, role FROM users WHERE id = $1`;
+  const userResult = await pool.query(userQuery, [updatedIssue.reporter_id]);
+  const users = userResult.rows;
+  return attachReporter(updatedIssue, users);
 };
 var deleteIssueFromDB = async (issueId) => {
   const query = `DELETE FROM issues WHERE id = $1 RETURNING id`;
@@ -291,7 +292,8 @@ var deleteIssueFromDB = async (issueId) => {
 // src/modules/issue/issue.controller.ts
 var createIssue = async (req, res) => {
   try {
-    const reporterId = req.user.id;
+    const user = req.user;
+    const reporterId = user.id;
     const result = await createIssueIntoDB(req.body, reporterId);
     sendResponse_default(res, {
       statusCode: 201,
@@ -300,11 +302,11 @@ var createIssue = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create issue";
     sendResponse_default(res, {
       statusCode: 400,
       success: false,
-      message: error.message || "Failed to create issue",
-      error
+      message
     });
   }
 };
@@ -323,17 +325,17 @@ var getAllIssues = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to retrieve issues";
     sendResponse_default(res, {
       statusCode: 500,
       success: false,
-      message: error.message || "Failed to retrieve issues",
-      error
+      message
     });
   }
 };
 var getSingleIssue = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
     const result = await getSingleIssueFromDB(id);
     sendResponse_default(res, {
       statusCode: 200,
@@ -342,18 +344,20 @@ var getSingleIssue = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Issue not found";
     sendResponse_default(res, {
       statusCode: 404,
       success: false,
-      message: error.message || "Issue not found"
+      message
     });
   }
 };
 var updateIssue = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+    const id = req.params.id;
+    const user = req.user;
+    const userId = user.id;
+    const userRole = user.role;
     const result = await updateIssueInDB(id, userId, userRole, req.body);
     sendResponse_default(res, {
       statusCode: 200,
@@ -362,16 +366,17 @@ var updateIssue = async (req, res) => {
       data: result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update issue";
     sendResponse_default(res, {
-      statusCode: error.message.includes("authorized") || error.message.includes("own") ? 403 : 400,
+      statusCode: message.includes("authorized") || message.includes("own") ? 403 : 400,
       success: false,
-      message: error.message || "Failed to update issue"
+      message
     });
   }
 };
 var deleteIssue = async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
     await deleteIssueFromDB(id);
     sendResponse_default(res, {
       statusCode: 200,
@@ -380,10 +385,11 @@ var deleteIssue = async (req, res) => {
       data: null
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete issue";
     sendResponse_default(res, {
-      statusCode: error.message === "Issue not found!" ? 404 : 400,
+      statusCode: message === "Issue not found!" ? 404 : 400,
       success: false,
-      message: error.message || "Failed to delete issue"
+      message
     });
   }
 };
@@ -399,13 +405,14 @@ import jwt2 from "jsonwebtoken";
 var auth = (...requiredRoles) => {
   return async (req, res, next) => {
     try {
-      const token = req.headers.authorization;
-      if (!token) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
           success: false,
           message: "You are not authorized!"
         });
       }
+      const token = authHeader.split(" ")[1];
       const decoded = jwt2.verify(token, config_default.secret);
       const role = decoded.role;
       if (requiredRoles.length && !requiredRoles.includes(role)) {
