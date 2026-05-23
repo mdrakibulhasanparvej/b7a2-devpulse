@@ -484,3 +484,54 @@ GET /api/issues?sort=oldest&type=feature_request&status=open
   "message": "<human-readable error message>"
 }
 ```
+
+### HTTP Status Codes Used
+
+| Code | Meaning               | Typical Use                                |
+| ---- | --------------------- | ------------------------------------------ |
+| 200  | OK                    | Successful GET, PATCH, DELETE              |
+| 201  | Created               | Successful POST (signup, create issue)     |
+| 400  | Bad Request           | Validation failure, duplicate email        |
+| 401  | Unauthorized          | Missing or invalid JWT                     |
+| 403  | Forbidden             | Insufficient role, not owner, wrong status |
+| 404  | Not Found             | Issue or user not found                    |
+| 500  | Internal Server Error | Unexpected server errors                   |
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+
+- **Node.js** v24 or later
+- **PostgreSQL** 14+ (or a cloud instance via Neon / Supabase)
+- **npm** v10+
+
+### Steps
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/<your-username>/DevPulse.git
+cd DevPulse
+
+# 2. Install dependencies
+npm install
+
+# 3. Create a .env file in the project root
+#    (see Environment Variables section below)
+
+# 4. Start the development server with hot-reload
+npm run dev
+```
+
+The server starts on the port specified in `.env` (default `6050`).
+
+```bash
+# Build for production
+npm run build
+
+# Start production build
+npm start
+```
+
+---
