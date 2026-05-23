@@ -123,3 +123,213 @@ DevPulse/
 | `updated_at`  | `TIMESTAMP`    | `DEFAULT CURRENT_TIMESTAMP`                                               |
 
 ---
+
+## API Endpoints — Complete Testing Guide
+
+> **Note:** All authenticated endpoints require the `Authorization` header in the format `Bearer <token>`. The JWT is obtained from the `/api/auth/login` response.
+
+---
+
+### 1. `POST /api/auth/signup` — Register a new user
+
+**Access:** Public
+
+**Request Body:**
+
+```json
+{
+  "name": "Alice Johnson",
+  "email": "alice@example.com",
+  "password": "securePass123",
+  "role": "contributor"
+}
+```
+
+**Success Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "id": 1,
+    "name": "Alice Johnson",
+    "email": "alice@example.com",
+    "role": "contributor",
+    "created_at": "2026-05-23T10:00:00.000Z",
+    "updated_at": "2026-05-23T10:00:00.000Z"
+  }
+}
+```
+
+> ⚠️ The `password` field is **never** included in any JSON response.
+
+**Register a maintainer for testing:**
+
+```json
+{
+  "name": "Bob Maintainer",
+  "email": "bob@example.com",
+  "password": "securePass456",
+  "role": "maintainer"
+}
+```
+
+---
+
+### 2. `POST /api/auth/login` — Authenticate & receive JWT
+
+**Access:** Public
+
+**Request Body:**
+
+```json
+{
+  "email": "alice@example.com",
+  "password": "securePass123"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "name": "Alice Johnson",
+      "email": "alice@example.com",
+      "role": "contributor",
+      "created_at": "2026-05-23T10:00:00.000Z",
+      "updated_at": "2026-05-23T10:00:00.000Z"
+    }
+  }
+}
+```
+
+> 📌 The JWT payload contains `id`, `name`, and `role`. This token is used for all subsequent authenticated requests.
+
+---
+
+### 3. `POST /api/issues` — Create an issue (Auth required)
+
+**Access:** Authenticated — `contributor` or `maintainer`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:**
+
+```json
+{
+  "title": "Login button unresponsive on Safari",
+  "description": "The login button does not trigger any action when clicked on Safari v15. Console shows no errors.",
+  "type": "bug"
+}
+```
+
+> 🔧 `reporter_id` is **auto-extracted** from the JWT token. Do not send it in the body.
+
+**Success Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Issue created successfully",
+  "data": {
+    "id": 1,
+    "title": "Login button unresponsive on Safari",
+    "description": "The login button does not trigger any action when clicked on Safari v15. Console shows no errors.",
+    "type": "bug",
+    "status": "open",
+    "created_at": "2026-05-23T10:05:00.000Z",
+    "updated_at": "2026-05-23T10:05:00.000Z",
+    "reporter": {
+      "id": 1,
+      "name": "Alice Johnson",
+      "role": "contributor"
+    }
+  }
+}
+```
+
+**Create a second issue for multi-user testing:**
+
+```json
+{
+  "title": "Dark mode toggle for dashboard",
+  "description": "Users need a dark mode toggle on the main dashboard for better accessibility during night hours.",
+  "type": "feature_request"
+}
+```
+
+---
+
+### 4. `GET /api/issues` — List issues with filtering & sorting
+
+**Access:** Public
+
+**Query Parameters:**
+
+| Parameter | Type   | Values / Default                    | Description              |
+| --------- | ------ | ----------------------------------- | ------------------------ |
+| `sort`    | string | `newest` (default) / `oldest`       | Chronological order      |
+| `type`    | string | `bug` / `feature_request`           | Filter by issue type     |
+| `status`  | string | `open` / `in_progress` / `resolved` | Filter by current status |
+
+**Example Requests:**
+
+```bash
+# All issues, newest first (default)
+GET /api/issues
+
+# Oldest first
+GET /api/issues?sort=oldest
+
+# Only bugs
+GET /api/issues?type=bug
+
+# Only open feature requests, sorted oldest first
+GET /api/issues?sort=oldest&type=feature_request&status=open
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Issues retrieved successfully",
+  "data": [
+    {
+      "id": 2,
+      "title": "Dark mode toggle for dashboard",
+      "description": "Users need a dark mode toggle on the main dashboard...",
+      "type": "feature_request",
+      "status": "open",
+      "created_at": "2026-05-23T10:06:00.000Z",
+      "updated_at": "2026-05-23T10:06:00.000Z",
+      "reporter": {
+        "id": 1,
+        "name": "Alice Johnson",
+        "role": "contributor"
+      }
+    },
+    {
+      "id": 1,
+      "title": "Login button unresponsive on Safari",
+      "description": "The login button does not trigger any action...",
+      "type": "bug",
+      "status": "open",
+      "created_at": "2026-05-23T10:05:00.000Z",
+      "updated_at": "2026-05-23T10:05:00.000Z",
+      "reporter": {
+        "id": 1,
+        "name": "Alice Johnson",
+        "role": "contributor"
+      }
+    }
+  ]
+}
+```
