@@ -333,3 +333,154 @@ GET /api/issues?sort=oldest&type=feature_request&status=open
   ]
 }
 ```
+
+> 🔍 **How the No-JOIN aggregation works:**
+>
+> 1. All matching `issues` rows are fetched with a single `SELECT`.
+> 2. Unique `reporter_id` values are collected into a set.
+> 3. A secondary batch query `SELECT id, name, role FROM users WHERE id = ANY($1)` retrieves all relevant users.
+> 4. The reporter objects are mapped to their respective issues in application code — **zero SQL JOINs used**.
+
+---
+
+### 5. `GET /api/issues/:id` — Get a single issue
+
+**Access:** Public
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Issue retrieved successfully",
+  "data": {
+    "id": 1,
+    "title": "Login button unresponsive on Safari",
+    "description": "The login button does not trigger any action when clicked on Safari v15. Console shows no errors.",
+    "type": "bug",
+    "status": "open",
+    "created_at": "2026-05-23T10:05:00.000Z",
+    "updated_at": "2026-05-23T10:05:00.000Z",
+    "reporter": {
+      "id": 1,
+      "name": "Alice Johnson",
+      "role": "contributor"
+    }
+  }
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "success": false,
+  "message": "Issue not found!"
+}
+```
+
+---
+
+### 6. `PATCH /api/issues/:id` — Update an issue (Auth required)
+
+**Access:** Authenticated — `contributor` or `maintainer`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Composite Security Guard Logic:**
+
+| Role          | Can update any issue? | Must be owner? | Must be status `open`? |
+| ------------- | --------------------- | -------------- | ---------------------- |
+| `maintainer`  | ✅ Yes                | ❌ No          | ❌ No                  |
+| `contributor` | ❌ No                 | ✅ Yes         | ✅ Yes                 |
+
+**Request Body (all fields optional):**
+
+```json
+{
+  "title": "Login button unresponsive on Safari (updated)",
+  "description": "Reproduced on Safari v15 and v16. Needs immediate fix.",
+  "type": "bug"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Issue updated successfully",
+  "data": {
+    "id": 1,
+    "title": "Login button unresponsive on Safari (updated)",
+    "description": "Reproduced on Safari v15 and v16. Needs immediate fix.",
+    "type": "bug",
+    "status": "open",
+    "created_at": "2026-05-23T10:05:00.000Z",
+    "updated_at": "2026-05-23T10:07:00.000Z",
+    "reporter": {
+      "id": 1,
+      "name": "Alice Johnson",
+      "role": "contributor"
+    }
+  }
+}
+```
+
+**Test Scenarios:**
+
+| Scenario                                                               | Expected HTTP Status | Expected Behaviour                                    |
+| ---------------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
+| Maintainer edits any field on any issue                                | 200                  | Update succeeds                                       |
+| Contributor edits their **own** issue while status is `open`           | 200                  | Update succeeds                                       |
+| Contributor tries to edit **another user's** issue                     | 403                  | `"You can only update your own issues!"`              |
+| Contributor tries to edit their own issue when status is `in_progress` | 403                  | `"You can only update issues that are still 'open'!"` |
+
+---
+
+### 7. `DELETE /api/issues/:id` — Delete an issue (Maintainer only)
+
+**Access:** Maintainer only
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Issue deleted successfully",
+  "data": null
+}
+```
+
+**Test Scenarios:**
+
+| Scenario                                   | Expected HTTP Status | Expected Behaviour                              |
+| ------------------------------------------ | -------------------- | ----------------------------------------------- |
+| `maintainer` deletes any issue             | 200                  | Deletion succeeds                               |
+| `contributor` attempts to delete any issue | 403                  | `"You have no permission to access this route"` |
+| DELETE on a non-existent issue             | 404                  | `"Issue not found!"`                            |
+
+---
+
+## Response Formats
+
+### Standard Success Response (200 / 201)
+
+```json
+{
+  "success": true,
+  "message": "<human-readable message>",
+  "data": {}
+}
+```
+
+### Standard Error Response (400 / 401 / 403 / 404 / 500)
+
+```json
+{
+  "success": false,
+  "message": "<human-readable error message>"
+}
+```
