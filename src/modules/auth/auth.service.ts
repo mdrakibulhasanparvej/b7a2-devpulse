@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import config from "../../config";
 import type { ILoginPayload } from "./auth.interface";
 export const loginUserFromDB = async (payload: ILoginPayload) => {
+  // ১. রিকোয়েস্ট বডি (Payload) থেকে ইমেইল এবং পাসওয়ার্ড আলাদা (Destructure) করা হচ্ছে
   const { email, password } = payload;
 
   const userQuery = `SELECT * FROM users WHERE email = $1`;
@@ -26,7 +27,7 @@ export const loginUserFromDB = async (payload: ILoginPayload) => {
   };
 
   const accessToken = jwt.sign(jwtPayload, config.secret as string, {
-    expiresIn: "10d", 
+    expiresIn: "10d",
   });
 
   const { password: _, ...userWithoutPassword } = user;
