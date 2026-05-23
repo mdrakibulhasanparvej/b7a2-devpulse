@@ -8,6 +8,9 @@ export const loginUserFromDB = async (payload: ILoginPayload) => {
   const { email, password } = payload;
 
   const userQuery = `SELECT * FROM users WHERE email = $1`;
+
+  // ২. ইমেইল দিয়ে ডেটাবেস থেকে ইউজার খোঁজার জন্য Raw SQL কুয়েরি তৈরি এবং এক্সিকিউট করা হচ্ছে (No ORM Rule)
+
   const result = await pool.query(userQuery, [email]);
   const user = result.rows[0];
 
