@@ -126,7 +126,7 @@ DevPulse/
 
 ## API Endpoints — Complete Testing Guide
 
-> **Note:** All authenticated endpoints require the `Authorization` header in the format `Bearer <token>`. The JWT is obtained from the `/api/auth/login` response.
+> **Note:** All authenticated endpoints require the `Authorization` header in the format `<JWT token>`. The JWT is obtained from the `/api/auth/login` response.
 
 ---
 
@@ -535,3 +535,21 @@ npm start
 ```
 
 ---
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+CONNECTIONSTRING=postgresql://user:password@host:port/database?sslmode=require
+PORT=6050
+JWT_SECRET=your_super_secret_jwt_key
+```
+
+| Variable           | Description                  | Example                                                                                                           |
+| ------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `CONNECTIONSTRING` | PostgreSQL connection string | `postgresql://neondb_owner:pass@ep-example-123456-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require` |
+| `PORT`             | Server listen port           | `6050`                                                                                                            |
+| `JWT_SECRET`       | Secret key for signing JWTs  | `aklsdlkioiwliooshanleihlgank`                                                                                    |
+
+> ⚠️ Tables (`users`, `issues`) are **automatically created** when the server starts — no manual migration needed.
