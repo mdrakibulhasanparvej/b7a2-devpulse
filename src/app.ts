@@ -5,7 +5,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import globalErrorHandler from "./middleware/globalErrorHandler";
+import globalErrorHandler from "./middleware/globalErrorHandler"; // ✅ space সরানো
 import { userRoutes } from "./modules/user/user.route";
 import { authRoutes } from "./modules/auth/auth.route";
 import { issueRoutes } from "./modules/issue/issue.route";
@@ -14,20 +14,17 @@ const app: Application = express();
 
 app.use(CookieParser());
 app.use(express.json());
-app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ সমস্যা ১ ঠিক — সব origin allow
 app.use(
   cors({
-    origin: "*",
-    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+    origin: "*", // ✅ সব origin allow
+    allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
 
-// ✅ OPTIONS preflight সব route-এ handle
-app.options("*", cors());
+app.options("*", cors()); // ✅ preflight handle
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
