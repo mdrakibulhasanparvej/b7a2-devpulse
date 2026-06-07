@@ -18,13 +18,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "*", // ✅ সব origin allow
+    origin: "*", // সব origin allow
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
 
-app.options("*", cors()); // ✅ preflight handle
+app.options("*", cors()); // preflight handle
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({

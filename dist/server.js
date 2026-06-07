@@ -15,9 +15,8 @@ dotenv.config({
 });
 var config = {
   connection_string: process.env.CONNECTIONSTRING,
-  port: process.env.PORT,
+  port: process.env.PORT || "6050",
   secret: process.env.JWT_SECRET
-  // refresh_secret: process.env.JWT_REFRESH_SECRET,
 };
 var config_default = config;
 
@@ -406,7 +405,10 @@ var auth = (...requiredRoles) => {
   return async (req, res, next) => {
     if (req.method === "OPTIONS") return next();
     try {
-      const token = req.headers.authorization || req.headers["x-auth-token"];
+      let token = req.headers.authorization || req.headers["x-auth-token"];
+      if (token && token.startsWith("Bearer ")) {
+        token = token.slice(7);
+      }
       if (!token) {
         return res.status(401).json({
           success: false,
@@ -462,7 +464,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "*",
-    // ✅ সব origin allow
+    // সব origin allow
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   })
@@ -481,14 +483,11 @@ app.use(globalErrorHandler_default);
 var app_default = app;
 
 // src/server.ts
+initDB();
 if (process.env.VERCEL !== "1") {
-  const main = () => {
-    initDB();
-    app_default.listen(config_default.port, () => {
-      console.log(`Example app listening on port ${config_default.port}`);
-    });
-  };
-  main();
+  app_default.listen(config_default.port, () => {
+    console.log(`Example app listening on port ${config_default.port}`);
+  });
 }
 var server_default = app_default;
 export {

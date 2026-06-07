@@ -8,14 +8,13 @@ const auth = (...requiredRoles: ROLES[]) => {
     if (req.method === "OPTIONS") return next();
 
     try {
-      // ✅ Vercel-এ authorization header strip হলেও
-      // x-auth-token দিয়ে fallback
-      const token =
+      let token =
         (req.headers.authorization as string) ||
         (req.headers["x-auth-token"] as string);
 
-      // console.log("Token received:", !!token);
-      // console.log("Headers:", JSON.stringify(req.headers));
+      if (token && token.startsWith("Bearer ")) {
+        token = token.slice(7);
+      }
 
       if (!token) {
         return res.status(401).json({
