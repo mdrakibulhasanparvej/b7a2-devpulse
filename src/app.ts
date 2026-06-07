@@ -5,7 +5,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import globalErrorHandler from "./ middleware/globalErrorHandler";
+import globalErrorHandler from "./middleware/globalErrorHandler";
 import { userRoutes } from "./modules/user/user.route";
 import { authRoutes } from "./modules/auth/auth.route";
 import { issueRoutes } from "./modules/issue/issue.route";
@@ -23,8 +23,6 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
-
-app.options("*", cors()); // preflight handle
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({

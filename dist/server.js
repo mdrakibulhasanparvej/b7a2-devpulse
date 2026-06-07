@@ -63,7 +63,7 @@ import CookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 
-// src/ middleware/globalErrorHandler.ts
+// src/middleware/globalErrorHandler.ts
 var globalErrorHandler = (err, req, res, next) => {
   res.status(500).json({
     success: false,
@@ -399,7 +399,7 @@ var USER_ROLE = {
   maintainer: "maintainer"
 };
 
-// src/ middleware/auth.ts
+// src/middleware/auth.ts
 import jwt2 from "jsonwebtoken";
 var auth = (...requiredRoles) => {
   return async (req, res, next) => {
@@ -469,7 +469,6 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   })
 );
-app.options("*", cors());
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "DevPulse",
