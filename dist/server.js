@@ -407,8 +407,6 @@ var auth = (...requiredRoles) => {
     if (req.method === "OPTIONS") return next();
     try {
       const token = req.headers.authorization || req.headers["x-auth-token"];
-      console.log("Token received:", !!token);
-      console.log("Headers:", JSON.stringify(req.headers));
       if (!token) {
         return res.status(401).json({
           success: false,
@@ -483,11 +481,17 @@ app.use(globalErrorHandler_default);
 var app_default = app;
 
 // src/server.ts
-var main = () => {
-  initDB();
-  app_default.listen(config_default.port, () => {
-    console.log(`Example app listening on port ${config_default.port}`);
-  });
+if (process.env.VERCEL !== "1") {
+  const main = () => {
+    initDB();
+    app_default.listen(config_default.port, () => {
+      console.log(`Example app listening on port ${config_default.port}`);
+    });
+  };
+  main();
+}
+var server_default = app_default;
+export {
+  server_default as default
 };
-main();
 //# sourceMappingURL=server.js.map

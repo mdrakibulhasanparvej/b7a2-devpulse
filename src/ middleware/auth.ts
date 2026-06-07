@@ -14,8 +14,8 @@ const auth = (...requiredRoles: ROLES[]) => {
         (req.headers.authorization as string) ||
         (req.headers["x-auth-token"] as string);
 
-      console.log("Token received:", !!token);
-      console.log("Headers:", JSON.stringify(req.headers));
+      // console.log("Token received:", !!token);
+      // console.log("Headers:", JSON.stringify(req.headers));
 
       if (!token) {
         return res.status(401).json({
