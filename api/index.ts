@@ -3,6 +3,6 @@ import { initDB } from "../src/db";
 
 initDB();
 
-export default function handler(req: unknown, res: unknown) {
+export default function handler(req: any, res: any) {
   return app(req, res);
 }
