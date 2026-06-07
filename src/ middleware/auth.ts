@@ -7,7 +7,8 @@ const auth = (...requiredRoles: ROLES[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       // সরাসরি হেডার থেকে টোকেনটি নিচ্ছি
-      const token = req.headers.authorization;
+      const token =
+        req.headers.authorization || (req.headers["Authorization"] as string);
 
       // যদি টোকেন না থাকে, তবে এরর হ্যান্ডেল করছি
       if (!token) {
