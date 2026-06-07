@@ -5,7 +5,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import globalErrorHandler from "./ middleware/globalErrorHandler";
+import globalErrorHandler from "./middleware/globalErrorHandler";
 import { userRoutes } from "./modules/user/user.route";
 import { authRoutes } from "./modules/auth/auth.route";
 import { issueRoutes } from "./modules/issue/issue.route";
@@ -17,11 +17,17 @@ app.use(express.json());
 app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ সমস্যা ১ ঠিক — সব origin allow
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "*",
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   }),
 );
+
+// ✅ OPTIONS preflight সব route-এ handle
+app.options("*", cors());
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).json({
@@ -29,7 +35,6 @@ app.get("/", (req: Request, res: Response) => {
     author: "API RUNING",
   });
 });
-
 
 app.use("/api/auth", userRoutes);
 app.use("/api/auth", authRoutes);

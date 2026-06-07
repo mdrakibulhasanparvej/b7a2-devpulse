@@ -8,11 +8,14 @@ const auth = (...requiredRoles: ROLES[]) => {
     if (req.method === "OPTIONS") return next();
 
     try {
-      const token = req.headers.authorization;
+      // ✅ Vercel-এ authorization header strip হলেও
+      // x-auth-token দিয়ে fallback
+      const token =
+        (req.headers.authorization as string) ||
+        (req.headers["x-auth-token"] as string);
 
-      // Vercel Log-এ দেখুন কী আসছে
-      console.log("TOKEN:", token);
-      console.log("SECRET exists:", !!config.secret);
+      console.log("Token received:", !!token);
+      console.log("Headers:", JSON.stringify(req.headers));
 
       if (!token) {
         return res.status(401).json({
@@ -36,8 +39,7 @@ const auth = (...requiredRoles: ROLES[]) => {
       req.user = decoded;
       next();
     } catch (err) {
-      // আসল error টা দেখুন
-      console.error("AUTH ERROR:", err);
+      console.error("Auth error:", err);
       next(err);
     }
   };
