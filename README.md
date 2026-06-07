@@ -218,7 +218,7 @@ DevPulse/
 
 **Access:** Authenticated — `contributor` or `maintainer`
 
-**Headers:** `Authorization: Bearer <token>`
+**Headers:** `Authorization: <JWT token>`
 
 **Request Body:**
 

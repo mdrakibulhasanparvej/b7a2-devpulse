@@ -34,8 +34,18 @@ const attachReporter = (issue: IIssueRow, users: IUserRow[]) => {
   };
 };
 
-export const createIssueIntoDB = async (payload: IIssuePayload, reporterId: number) => {
+export const createIssueIntoDB = async (
+  payload: IIssuePayload,
+  reporterId: number,
+) => {
   const { title, description, type } = payload;
+
+  if (payload.title && payload.title.length > 150) {
+    throw new Error("Validation: Title must be 150 characters or less");
+  }
+  if (payload.description && payload.description.length < 20) {
+    throw new Error("Validation: Description must be at least 20 characters");
+  }
 
   const query = `
     INSERT INTO issues (title, description, type, status, reporter_id)
@@ -70,7 +80,7 @@ export const getAllIssuesFromDB = async (filters: IIssueQueryFilters) => {
     query += ` AND status = $${values.length}`;
   }
 
-  const sortOrder = sort === 'oldest' ? 'ASC' : 'DESC';
+  const sortOrder = sort === "oldest" ? "ASC" : "DESC";
   query += ` ORDER BY created_at ${sortOrder}`;
 
   const result = await pool.query(query, values);
@@ -86,7 +96,6 @@ export const getAllIssuesFromDB = async (filters: IIssueQueryFilters) => {
 
   return issues.map((issue) => attachReporter(issue, users));
 };
-
 
 export const getSingleIssueFromDB = async (id: string) => {
   const issueQuery = `SELECT * FROM issues WHERE id = $1`;
@@ -104,7 +113,6 @@ export const getSingleIssueFromDB = async (id: string) => {
   return attachReporter(issue, users);
 };
 
-
 export const updateIssueInDB = async (
   issueId: string,
   userId: number,
@@ -119,27 +127,28 @@ export const updateIssueInDB = async (
     throw new Error("Issue not found!");
   }
 
-  if (userRole === 'contributor') {
+  if (userRole === "contributor") {
     if (existingIssue.reporter_id !== userId) {
       throw new Error("You can only update your own issues!");
     }
-    if (existingIssue.status !== 'open') {
+    if (existingIssue.status !== "open") {
       throw new Error("You can only update issues that are still 'open'!");
     }
   }
 
-  const { title, description, type } = payload;
+  const { title, description, type, status } = payload;
   const updateQuery = `
     UPDATE issues 
     SET title = COALESCE($1, title), 
         description = COALESCE($2, description), 
         type = COALESCE($3, type),
+        status = COALESCE($4, status),
         updated_at = CURRENT_TIMESTAMP
-    WHERE id = $4
+    WHERE id = $5
     RETURNING *
   `;
 
-  const values = [title, description, type, issueId];
+  const values = [title, description, type, status, issueId];
   const result = await pool.query(updateQuery, values);
   const updatedIssue = result.rows[0] as IIssueRow;
 

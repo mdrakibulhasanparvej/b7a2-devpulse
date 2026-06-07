@@ -88,12 +88,33 @@ export const updateIssue = async (req: Request, res: Response) => {
       message: "Issue updated successfully",
       data: result,
     });
-  } catch (error) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : "Failed to update issue";
-    sendResponse(res, {
-      statusCode: message.includes("authorized") || message.includes("own") ? 403 : 400,
+    if (message.includes("still 'open'")) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        errors: [error.message],
+      });
+    }
+    if (message.includes("not found")) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+        errors: [error.message],
+      });
+    }
+    if (message.includes("own") || message.includes("authorized")) {
+      return res.status(403).json({
+        success: false,
+        message: "You have no permission to modify this resource",
+        errors: [error.message],
+      });
+    }
+    return res.status(400).json({
       success: false,
       message,
+      errors: [message],
     });
   }
 };

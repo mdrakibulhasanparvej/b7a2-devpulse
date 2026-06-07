@@ -80,7 +80,7 @@ var sendResponse = (res, data) => {
     success: data.success,
     message: data.message,
     data: data.data,
-    error: data.error
+    errors: data.errors
   });
 };
 var sendResponse_default = sendResponse;
@@ -197,6 +197,12 @@ var attachReporter = (issue, users) => {
 };
 var createIssueIntoDB = async (payload, reporterId) => {
   const { title, description, type } = payload;
+  if (payload.title && payload.title.length > 150) {
+    throw new Error("Validation: Title must be 150 characters or less");
+  }
+  if (payload.description && payload.description.length < 20) {
+    throw new Error("Validation: Description must be at least 20 characters");
+  }
   const query = `
     INSERT INTO issues (title, description, type, status, reporter_id)
     VALUES ($1, $2, $3, 'open', $4)
@@ -260,17 +266,18 @@ var updateIssueInDB = async (issueId, userId, userRole, payload) => {
       throw new Error("You can only update issues that are still 'open'!");
     }
   }
-  const { title, description, type } = payload;
+  const { title, description, type, status } = payload;
   const updateQuery = `
     UPDATE issues 
     SET title = COALESCE($1, title), 
         description = COALESCE($2, description), 
         type = COALESCE($3, type),
+        status = COALESCE($4, status),
         updated_at = CURRENT_TIMESTAMP
-    WHERE id = $4
+    WHERE id = $5
     RETURNING *
   `;
-  const values = [title, description, type, issueId];
+  const values = [title, description, type, status, issueId];
   const result = await pool.query(updateQuery, values);
   const updatedIssue = result.rows[0];
   const userQuery = `SELECT id, name, role FROM users WHERE id = $1`;
@@ -365,10 +372,31 @@ var updateIssue = async (req, res) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update issue";
-    sendResponse_default(res, {
-      statusCode: message.includes("authorized") || message.includes("own") ? 403 : 400,
+    if (message.includes("still 'open'")) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+        errors: [error.message]
+      });
+    }
+    if (message.includes("not found")) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+        errors: [error.message]
+      });
+    }
+    if (message.includes("own") || message.includes("authorized")) {
+      return res.status(403).json({
+        success: false,
+        message: "You have no permission to modify this resource",
+        errors: [error.message]
+      });
+    }
+    return res.status(400).json({
       success: false,
-      message
+      message,
+      errors: [message]
     });
   }
 };
