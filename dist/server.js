@@ -1,7 +1,6 @@
 
    import { createRequire } from 'module';
    const require = createRequire(import.meta.url);
-
   
 
 // src/db/index.ts
@@ -403,12 +402,8 @@ var USER_ROLE = {
 import jwt2 from "jsonwebtoken";
 var auth = (...requiredRoles) => {
   return async (req, res, next) => {
-    if (req.method === "OPTIONS") return next();
     try {
-      let token = req.headers.authorization || req.headers["x-auth-token"];
-      if (token && token.startsWith("Bearer ")) {
-        token = token.slice(7);
-      }
+      const token = req.headers.authorization;
       if (!token) {
         return res.status(401).json({
           success: false,
@@ -460,13 +455,11 @@ var issueRoutes = router3;
 var app = express();
 app.use(CookieParser());
 app.use(express.json());
+app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "*",
-    // সব origin allow
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    origin: "http://localhost:3000"
   })
 );
 app.get("/", (req, res) => {
@@ -482,14 +475,11 @@ app.use(globalErrorHandler_default);
 var app_default = app;
 
 // src/server.ts
-initDB();
-if (process.env.VERCEL !== "1") {
+var main = () => {
+  initDB();
   app_default.listen(config_default.port, () => {
     console.log(`Example app listening on port ${config_default.port}`);
   });
-}
-var server_default = app_default;
-export {
-  server_default as default
 };
+main();
 //# sourceMappingURL=server.js.map

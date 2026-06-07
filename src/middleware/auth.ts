@@ -5,16 +5,8 @@ import type { CustomJwtPayload, ROLES } from "../types";
 
 const auth = (...requiredRoles: ROLES[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    if (req.method === "OPTIONS") return next();
-
     try {
-      let token =
-        (req.headers.authorization as string) ||
-        (req.headers["x-auth-token"] as string);
-
-      if (token && token.startsWith("Bearer ")) {
-        token = token.slice(7);
-      }
+      const token = req.headers.authorization;
 
       if (!token) {
         return res.status(401).json({

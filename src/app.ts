@@ -14,13 +14,12 @@ const app: Application = express();
 
 app.use(CookieParser());
 app.use(express.json());
+app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-    origin: "*", // সব origin allow
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    origin: "http://localhost:3000",
   }),
 );
 
