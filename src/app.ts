@@ -5,7 +5,7 @@ import express, {
   type Request,
   type Response,
 } from "express";
-import globalErrorHandler from "./middleware/globalErrorHandler"; // ✅ space সরানো
+import globalErrorHandler from "./ middleware/globalErrorHandler";
 import { userRoutes } from "./modules/user/user.route";
 import { authRoutes } from "./modules/auth/auth.route";
 import { issueRoutes } from "./modules/issue/issue.route";

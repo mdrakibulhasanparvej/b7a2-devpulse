@@ -404,18 +404,22 @@ var USER_ROLE = {
 import jwt2 from "jsonwebtoken";
 var auth = (...requiredRoles) => {
   return async (req, res, next) => {
+    if (req.method === "OPTIONS") return next();
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      const token = req.headers.authorization || req.headers["x-auth-token"];
+      console.log("Token received:", !!token);
+      console.log("Headers:", JSON.stringify(req.headers));
+      if (!token) {
         return res.status(401).json({
           success: false,
           message: "You are not authorized!"
         });
       }
-      const token = authHeader.split(" ")[1];
-      const decoded = jwt2.verify(token, config_default.secret);
-      const role = decoded.role;
-      if (requiredRoles.length && !requiredRoles.includes(role)) {
+      const decoded = jwt2.verify(
+        token,
+        config_default.secret
+      );
+      if (requiredRoles.length && !requiredRoles.includes(decoded.role)) {
         return res.status(403).json({
           success: false,
           message: "You have no permission to access this route"
@@ -424,6 +428,7 @@ var auth = (...requiredRoles) => {
       req.user = decoded;
       next();
     } catch (err) {
+      console.error("Auth error:", err);
       next(err);
     }
   };
@@ -455,13 +460,16 @@ var issueRoutes = router3;
 var app = express();
 app.use(CookieParser());
 app.use(express.json());
-app.use(express.text());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "http://localhost:3000"
+    origin: "*",
+    // ✅ সব origin allow
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   })
 );
+app.options("*", cors());
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "DevPulse",
